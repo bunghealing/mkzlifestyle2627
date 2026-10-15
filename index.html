@@ -261,8 +261,8 @@
 
     <script>
         lucide.createIcons();
-        const CURRENT_WEEK = 4;
 
+        // Lấy thời gian hiện tại (chuẩn giờ Việt Nam)
         const now = new Date();
         const vnTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
         
@@ -272,24 +272,29 @@
         
         document.getElementById('dynamic-date').textContent = `${dayStr}/${monthStr}/${yearStr}`;
 
-        const diffDaysDynamic = Math.ceil(Math.abs(vnTime - new Date("2026-09-17")) / (1000 * 60 * 60 * 24));
-        const currentWeekNumDynamic = Math.ceil(diffDaysDynamic / 7) || 1;
-        document.getElementById('dynamic-week-badge').textContent = `Tuần ${currentWeekNumDynamic}`;
-
-        // Cập nhật thanh tiến độ 52 tuần
-        const totalWeeks = 52;
-        const totalDays = 365; // Đã cập nhật thành 365 ngày
+        // TÍNH TOÁN NGÀY & TUẦN TỰ ĐỘNG CHUẨN XÁC
+        const startDate = new Date("2026-09-17T00:00:00");
+        const diffTime = vnTime.getTime() - startDate.getTime();
         
-        // Đảm bảo số tuần/ngày không vượt quá tối đa
-        let safeWeek = currentWeekNumDynamic > totalWeeks ? totalWeeks : currentWeekNumDynamic;
+        // Tính số ngày đã trôi qua (Ngày 17/09 = Ngày 0)
+        let diffDaysDynamic = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDaysDynamic < 0) diffDaysDynamic = 0; // Nếu chưa tới ngày khai giảng
+        
+        // Công thức chuẩn: Ngày 0-6 là Tuần 1, Ngày 7-13 là Tuần 2... Ngày 28 là Tuần 5
+        const CURRENT_WEEK = Math.floor(diffDaysDynamic / 7) + 1;
+        
+        document.getElementById('dynamic-week-badge').textContent = `Tuần ${CURRENT_WEEK}`;
+
+        // Cập nhật thanh tiến độ 365 ngày
+        const totalWeeks = 52;
+        const totalDays = 365; 
+        
+        let safeWeek = CURRENT_WEEK > totalWeeks ? totalWeeks : CURRENT_WEEK;
         let safeDays = diffDaysDynamic > totalDays ? totalDays : diffDaysDynamic;
-        if(safeDays < 0) safeDays = 0; // Tránh ngày âm nếu chưa bắt đầu
         
         document.getElementById('progress-text-left').textContent = `Đã học ${safeWeek} / ${totalWeeks} tuần`;
         document.getElementById('progress-text-right').textContent = `Ngày ${safeDays} / ${totalDays}`;
         
-        // Hiệu ứng chạy thanh tiến độ
-        // Tính theo ngày sẽ cho thanh tiến trình mượt hơn
         setTimeout(() => {
             const percent = (safeDays / totalDays) * 100; 
             document.getElementById('progress-fill').style.width = `${percent}%`;
@@ -515,7 +520,10 @@
                 document.getElementById('modal-body').innerHTML = ''; 
             }
         }
-        switchQuarter(1);
+        // Tự động mở Tab Quý tương ứng với tuần hiện tại
+        let activeQuarter = Math.ceil(CURRENT_WEEK / 13);
+        if (activeQuarter > 4) activeQuarter = 4;
+        switchQuarter(activeQuarter);
     </script>
 </body>
 </html>
